@@ -7,8 +7,10 @@ from handlers.profile import get_my_profile_info
 
 async def get_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['city'] = update.message.text
+    pool = context.application.bot_data["pool"]
     user = update.effective_user
     await add_user(
+        pool,
         user.id,
         user.username,
         context.user_data['name'],
@@ -36,8 +38,9 @@ async def edit_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return EDIT_CITY
 
 async def update_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    pool = context.application.bot_data["pool"]
     context.user_data['city'] = update.message.text
-    await update_user_field(update.effective_user.id, 'city', context.user_data['city'])
-    user = await get_user(update.effective_user.id)  
+    await update_user_field(pool, update.effective_user.id, 'city', context.user_data['city'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, update.message)
     return PROFILE

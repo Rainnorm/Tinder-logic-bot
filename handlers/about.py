@@ -10,7 +10,8 @@ async def get_about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     context.user_data['about'] = update.message.text
-    await save_about(user.id, context.user_data['about'])
+    pool = context.application.bot_data["pool"]
+    await save_about(pool, user.id, context.user_data['about'])
     await update.message.reply_text(
         'Ваши данные сохранены',
         reply_markup=start_keyboard()
@@ -32,7 +33,8 @@ async def edit_about(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def update_about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['about'] = update.message.text
-    await update_user_field(update.effective_user.id, 'about', context.user_data['about'])
+    pool = context.application.bot_data["pool"]
+    await update_user_field(pool, update.effective_user.id, 'about', context.user_data['about'])
     user = await get_user(update.effective_user.id)  
     await get_my_profile_info(user, update.message)
     return PROFILE
@@ -43,7 +45,8 @@ async def delete_about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     context.user_data['about'] = None
-    await update_user_field(update.effective_user.id, 'about', context.user_data['about'])
-    user = await get_user(update.effective_user.id)  
+    pool = context.application.bot_data["pool"]
+    await update_user_field(pool, update.effective_user.id, 'about', context.user_data['about'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, query.message)
     return PROFILE

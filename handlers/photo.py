@@ -8,8 +8,9 @@ from handlers.profile import get_my_profile_info
 
 async def get_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['photo'] = update.message.photo[-1].file_id
+    pool = context.application.bot_data["pool"]
     user = update.effective_user
-    await save_photo(user.id, context.user_data['photo'])
+    await save_photo(pool, user.id, context.user_data['photo'])
     await update.message.reply_text(
         'Расскажите о себе',
         reply_markup=skip_keyboard()
@@ -31,8 +32,9 @@ async def edit_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def update_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['photo'] = update.message.photo[-1].file_id
-    await update_user_field(update.effective_user.id, 'photo', context.user_data['photo'])
-    user = await get_user(update.effective_user.id)  
+    pool = context.application.bot_data["pool"]
+    await update_user_field(pool, update.effective_user.id, 'photo', context.user_data['photo'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, update.message)
     return PROFILE
 
@@ -40,9 +42,9 @@ async def update_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def delete_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     context.user_data['photo'] = None
-    await update_user_field(update.effective_user.id, 'photo', context.user_data['photo'])
-    user = await get_user(update.effective_user.id)  
+    await update_user_field(pool, update.effective_user.id, 'photo', context.user_data['photo'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, query.message)
     return PROFILE

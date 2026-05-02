@@ -39,7 +39,7 @@ async def edit_age(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def update_age(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-
+    pool = context.application.bot_data["pool"]
     valid, result = validate_age(text)
 
     if not valid:
@@ -49,12 +49,13 @@ async def update_age(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['age'] = result
 
     await update_user_field(
+        pool,
         update.effective_user.id,
         'age',
         result
     )
 
-    user = await get_user(update.effective_user.id)
+    user = await get_user(pool, update.effective_user.id)
 
     await get_my_profile_info(user, update.effective_message)
 

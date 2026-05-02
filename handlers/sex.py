@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from keyboards import back_keyboard, sex_keyboard, sex_filter_keyboard
-from states import GET_CITY, EDIT_SEX, PROFILE, GET_SEARCH_SEX
+from keyboards import sex_keyboard, sex_filter_keyboard
+from states import EDIT_SEX, PROFILE, GET_SEARCH_SEX
 from handlers.profile import get_my_profile_info
 from db import get_user, update_user_field
 
@@ -35,12 +35,13 @@ async def edit_sex(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def update_sex(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    pool = context.application.bot_data["pool"]
     if query.data == 'male':
         context.user_data['sex'] = 'Мужской'
     else:
         context.user_data['sex'] = 'Женский'
-    await update_user_field(update.effective_user.id, 'sex', context.user_data['sex'])
-    user = await get_user(update.effective_user.id)  
+    await update_user_field(pool, update.effective_user.id, 'sex', context.user_data['sex'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, query.message)
     return PROFILE
 

@@ -49,17 +49,23 @@ from db import init_db
 from handlers.swipe import like, skip, like_back, start_likes_queue, skip_like
 from handlers.search_sex import get_search_sex, update_search_sex, edit_search_sex
 import handlers.swipe as swipe 
+import asyncpg
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
+DB_URL = os.getenv('DB_URL')
 BOT = Bot(token=TOKEN)
 swipe.BOT = BOT
-async def on_startup(app):
-    await init_db()
+# async def on_startup(app):
+#     await init_db()
 
+async def post_init(app):
+    pool = await asyncpg.create_pool(os.getenv("DB_URL"))
+    await init_db(pool)
+    app.bot_data["pool"] = pool
 
 def main():
-    app = ApplicationBuilder().token(TOKEN).post_init(on_startup).build()
+    app = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],                              #Добавить автообновление username при /start а лучше не только

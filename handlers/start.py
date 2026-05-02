@@ -5,9 +5,10 @@ from states import MAIN_MENU
 from db import get_user, update_user_field
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     if user:
-        await update_user_field(update.effective_user.id, 'username', update.effective_user.username)
+        await update_user_field(pool, update.effective_user.id, 'username', update.effective_user.username)
     await update.message.reply_text(
         "Добро пожаловать!\nВыберите действие:",
         reply_markup=start_keyboard()

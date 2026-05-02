@@ -2,26 +2,23 @@ from db import get_next_user, DB_NAME
 from keyboards import swipe_keyboard
 import aiosqlite
 
-async def get_next_profile(user_id, filter_data):
-    return await get_next_user(user_id, filter_data)
+async def get_next_profile(pool, user_id, filter_data):
+    return await get_next_user(pool, user_id, filter_data)
 
 
-async def send_profile(update, context, user):
+async def send_profile(pool, update, context, user):
     user_id = update.effective_user.id
     target_id = user["id"]
 
     # -------------------------
     # 🔥 фиксируем просмотр (кулдаун / антиповторы)
     # -------------------------
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute(
-            """
-            INSERT OR REPLACE INTO views (user_id, target_id, created_at)
-            VALUES (?, ?, CURRENT_TIMESTAMP)
-            """,
-            (user_id, target_id)
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "INSERT INTO views (user_id, target_id) VALUES ($1, $2)",
+            user_id, target_id,
         )
-        await db.commit()
+ 
     print("USER TYPE:", type(user))
     print("USER VALUE:", user)
 

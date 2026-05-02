@@ -1,10 +1,8 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-import asyncio
-from services.swipe import get_next_profile, send_profile, no_more_profiles
-from services.match import like_user
+from services.swipe import get_next_profile, send_profile
 from states import SWIPE_MODE
-from db import debug_all_users, add_like, add_dislike, get_likes_queue, check_match, save_match, get_user, cleanup_after_match, remove_like
+from db import add_like, add_dislike, get_likes_queue, check_match, save_match, get_user, cleanup_after_match, remove_like
 BOT_USERNAME = "kittytestGKh_bot"
 
 # -------------------------
@@ -13,8 +11,8 @@ BOT_USERNAME = "kittytestGKh_bot"
 async def start_swipe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     filter_data = context.user_data.get("filter", {})
-
-    user = await get_next_profile(user_id, filter_data)
+    pool = context.application.bot_data["pool"]
+    user = await get_next_profile(pool, user_id, filter_data)
 
     if not user:
         await update.effective_message.reply_text("😢 Никого больше нет")
@@ -22,7 +20,7 @@ async def start_swipe(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["current_profile_id"] = user["id"]
 
-    await send_profile(update, context, user)
+    await send_profile(pool, update, context, user)
 
     return SWIPE_MODE
 
@@ -53,7 +51,7 @@ def make_link(user):
 async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     print("MATCH CHECK START")
 
     user_id = update.effective_user.id
@@ -62,7 +60,7 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("LIKE:", user_id, "->", target_id)
 
     # 1. сохраняем лайк
-    await add_like(user_id, target_id)
+    await add_like(pool, user_id, target_id)
 
     # 2. уведомляем пользователя (без падения)
     try:
@@ -74,7 +72,7 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("LIKE notify error:", e)
 
     # 3. проверка матча (ОДИН РАЗ!)
-    result = await check_match(user_id, target_id)
+    result = await check_match(pool, user_id, target_id)
     print("CHECK MATCH RESULT:", result)
 
     if not result:
@@ -83,7 +81,7 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("MATCH TRUE")
 
     # 4. сохраняем матч
-    await save_match(user_id, target_id)
+    await save_match(pool, user_id, target_id)
 
     # 5. получаем пользователей
    
@@ -97,21 +95,21 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     user_id = update.effective_user.id
     target_id = int(query.data.split("_")[1])
 
     print("SKIP:", user_id, "->", target_id)
 
-    await add_dislike(user_id, target_id)
+    await add_dislike(pool, user_id, target_id)
     
 
     return await start_swipe(update, context)
 
 async def start_likes_queue(update, context):
     user_id = update.effective_user.id
-
-    queue = await get_likes_queue(user_id)
+    pool = context.application.bot_data["pool"]
+    queue = await get_likes_queue(pool, user_id)
 
     if not queue:
         await update.effective_message.reply_text("❤️ Пока никто не лайкнул тебя")
@@ -123,9 +121,9 @@ async def start_likes_queue(update, context):
 
 async def show_next_like(update, context):
     user_id = update.effective_user.id
-
+    pool = context.application.bot_data["pool"]
     # 🔥 ВСЕГДА свежие данные
-    queue = await get_likes_queue(user_id)
+    queue = await get_likes_queue(pool, user_id)
 
     if not queue:
         await update.effective_message.reply_text("Ты посмотрел всех 👍")
@@ -165,23 +163,23 @@ async def show_next_like(update, context):
 async def like_back(update, context):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     user_id = update.effective_user.id
     target_id = int(query.data.split("_")[2])
 
     print("LIKE BACK:", user_id, "->", target_id)
 
     # ставим лайки с обеих сторон
-    await add_like(user_id, target_id)
-    await add_like(target_id, user_id)
+    await add_like(pool, user_id, target_id)
+    await add_like(pool, target_id, user_id)
 
     # 🔥 MATCH
-    if await check_match(user_id, target_id):
-        await save_match(user_id, target_id)
-        await cleanup_after_match(user_id, target_id)
+    if await check_match(pool, user_id, target_id):
+        await save_match(pool, user_id, target_id)
+        await cleanup_after_match(pool, user_id, target_id)
 
-        user = await get_user(user_id)
-        target = await get_user(target_id)
+        user = await get_user(pool, user_id)
+        target = await get_user(pool, target_id)
 
         if user and target:
             link_user = make_link(user)
@@ -209,11 +207,12 @@ async def like_back(update, context):
 async def skip_like(update, context):
     query = update.callback_query
     await query.answer()
+    pool = context.application.bot_data["pool"]
     user_id = update.effective_user.id
     current_user = context.user_data.get("current_like_user")
 
     if current_user:
-        await remove_like(current_user, user_id)   # только удаляем лайк
+        await remove_like(pool, current_user, user_id)   # только удаляем лайк
         # определяем, нужно ли скрывать пользователя в будущем:
         # await hide_user_for_future(user_id, current_user)  # через отдельную таблицу
 

@@ -8,10 +8,10 @@ from handlers.swipe import start_swipe
 async def start_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     user_id = update.effective_user.id
 
-    user = await get_user(user_id)
+    user = await get_user(pool, user_id)
 
     if not user:
         await query.message.reply_text("Сначала заполни профиль")

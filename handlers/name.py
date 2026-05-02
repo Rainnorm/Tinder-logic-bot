@@ -27,7 +27,8 @@ async def edit_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def update_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['name'] = update.message.text
-    await update_user_field(update.effective_user.id, 'name', context.user_data['name'])
-    user = await get_user(update.effective_user.id)  
+    pool = context.application.bot_data["pool"]
+    await update_user_field(pool, update.effective_user.id, 'name', context.user_data['name'])
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, update.message)
     return PROFILE

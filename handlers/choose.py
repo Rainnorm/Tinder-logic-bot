@@ -9,9 +9,9 @@ from handlers.profile import get_my_profile_info
 async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    pool = context.application.bot_data["pool"]
     if query.data == 'yes':
-        await delete_profile(update.effective_user.id)
+        await delete_profile(pool, update.effective_user.id)
         await query.edit_message_text(
             'Введите ваше имя',
             reply_markup=back_keyboard()
@@ -29,9 +29,10 @@ async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def accept_delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     if query.data == 'delete':
-        await delete_profile(update.effective_user.id)
+        await delete_profile(pool, update.effective_user.id)
         await query.edit_message_text(
             'Анкета удалена',
             reply_markup=start_keyboard()

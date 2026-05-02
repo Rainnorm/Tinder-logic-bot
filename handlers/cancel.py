@@ -2,7 +2,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from keyboards import start_keyboard
 from states import MAIN_MENU, PROFILE
-from handlers.profile import get_my_profile_info, get_user
+from handlers.profile import get_my_profile_info
+from db import get_user
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,8 +27,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     await get_my_profile_info(user, query.message)
 
     return PROFILE

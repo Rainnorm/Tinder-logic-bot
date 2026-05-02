@@ -8,8 +8,8 @@ from db import get_user
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     if user:
         await query.edit_message_text(
             'У вас уже есть анкета. Создать новую с нуля?\n!Это удалит существующую анкету!',

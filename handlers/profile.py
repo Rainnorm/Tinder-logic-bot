@@ -52,8 +52,8 @@ async def get_my_profile_info(user, target, edit_flag=False):
 async def get_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     
     if not user:
         try:
@@ -70,7 +70,8 @@ async def get_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    user = await get_user(update.effective_user.id)
+    pool = context.application.bot_data["pool"]
+    user = await get_user(pool, update.effective_user.id)
     edit_flag = 1
     await get_my_profile_info(user, query.message, edit_flag)
     return EDIT_PROFILE
