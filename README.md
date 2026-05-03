@@ -56,4 +56,15 @@ Telegram-бот с реализованной логикой знакомств 
 ```bash
 git clone https://github.com/Rainnorm/Tinder-logic-bot.git
 cd Tinder-logic-bot
+```
+В директории проекта обязательно создать файл .env
+
+Пример .env:
+```bash
+#Обязательно заменить токен на свой
+BOT_TOKEN = 000000000:AAHxxx_xxxxplxxxSxxx_xxxxxGxxxIxxxx
+DB_URL=postgresql://postgres:1234@db:5432/bot
+```
+После создания и заполнения .env выполнить:
+```bash
 docker-compose up --build
