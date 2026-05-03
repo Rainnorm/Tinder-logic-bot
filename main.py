@@ -139,9 +139,6 @@ def main():
             EDIT_SEARCH_SEX: [CallbackQueryHandler(update_search_sex, pattern='^sex_'),
                               CallbackQueryHandler(cancel, pattern='cancel')],
             
-            # SELECT_SEX_FILTER: [CallbackQueryHandler(set_search_filter),
-            #                     CallbackQueryHandler(cancel, pattern='cancel')
-            #                     ],
 
             SWIPE_MODE: [CallbackQueryHandler(like, pattern="^like_"),
                          CallbackQueryHandler(skip, pattern="^skip_"),

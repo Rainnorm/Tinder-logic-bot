@@ -35,7 +35,7 @@ async def update_about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['about'] = update.message.text
     pool = context.application.bot_data["pool"]
     await update_user_field(pool, update.effective_user.id, 'about', context.user_data['about'])
-    user = await get_user(update.effective_user.id)  
+    user = await get_user(pool, update.effective_user.id)  
     await get_my_profile_info(user, update.message)
     return PROFILE
 

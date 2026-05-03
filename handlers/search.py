@@ -17,9 +17,7 @@ async def start_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Сначала заполни профиль")
         return
 
-    # -------------------------
-    # 🔥 НОРМАЛИЗУЕМ user (tuple / dict)
-    # -------------------------
+
     if isinstance(user, tuple):
         user = {
             "id": user[0],
@@ -33,12 +31,10 @@ async def start_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "about": user[8]
         }
 
-    # -------------------------
-    # 🔥 ФИЛЬТР ИЗ БД (ВАЖНО)
-    # -------------------------
+
     user_age = user["age"]
 
-    # 🔥 диапазон ±3 года
+
     min_age = max(14, user_age - 3)
     max_age = user_age + 3
 

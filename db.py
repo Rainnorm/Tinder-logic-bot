@@ -18,7 +18,6 @@ async def init_db(pool):
     if not DB_URL:
         raise RuntimeError("DB_URL is not set")
 
-    # retry connect
     for i in range(15):
         try:
             pool = await asyncpg.create_pool(DB_URL)
@@ -164,18 +163,6 @@ async def update_user_field(pool, user_id, field, value):
         )
 
 
-########################################################################################################################################################################################
-########################################################################################################################################################################################
-########################################################################################################################################################################################
-########################################################################################################################################################################################
-########################################################################################################################################################################################
-# async def debug_all_users():
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute("SELECT id, sex, age, city FROM users") as cursor:
-#             rows = await cursor.fetchall()
-#             print("ALL USERS:", rows)
-
-
 async def add_dislike(pool, user_id: int, target_id: int):
     async with pool.acquire() as conn:
         await conn.execute(
@@ -209,7 +196,7 @@ async def get_next_user(pool, user_id: int, filter_data: dict):
     city = filter_data.get("city")
 
     async with pool.acquire() as conn:
-        # Получаем данные текущего пользователя
+
         user = await conn.fetchrow(
             "SELECT sex, looking_for FROM users WHERE id = $1",
             user_id,
@@ -220,11 +207,10 @@ async def get_next_user(pool, user_id: int, filter_data: dict):
         user_sex = user["sex"]
         user_looking_for = user["looking_for"]
 
-        # Строим условия динамически с нумерацией параметров $1, $2, ...
         conditions = [
             "id != $1",
             "age BETWEEN $2 AND $3",
-            "id NOT IN (SELECT target_id FROM views WHERE user_id = $4 AND created_at > NOW() - INTERVAL '10 seconds')",
+            "id NOT IN (SELECT target_id FROM views WHERE user_id = $4 AND created_at > NOW() - INTERVAL '60 seconds')",
         ]
         params = [user_id, min_age, max_age, user_id]
 
@@ -250,51 +236,6 @@ async def get_next_user(pool, user_id: int, filter_data: dict):
         return dict(row) if row else None
 
 
-
-# async def save_like(from_user_id: int, to_user_id: int):
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         await db.execute(
-#             """
-#             INSERT OR IGNORE INTO likes (from_user_id, target_id)
-#             VALUES (?, ?)
-#             """,
-#             (from_user_id, to_user_id)
-#         )
-#         await db.commit()
-
-
-# 🔍 проверить, лайкнул ли один пользователь другого
-# async def check_like(from_user_id: int, to_user_id: int) -> bool:
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute(
-#             """
-#             SELECT 1 FROM likes
-#             WHERE from_user_id = ? AND target_id = ?
-#             """,
-#             (from_user_id, to_user_id)
-#         ) as cursor:
-#             result = await cursor.fetchone()
-#             return result is not None
-
-
-# # 💘 проверить взаимный лайк (мэтч)
-# async def is_match(user1_id: int, user2_id: int) -> bool:
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute(
-#             """
-#             SELECT 1 FROM likes
-#             WHERE (from_user_id = ? AND target_id = ?)
-#                OR (from_user_id = ? AND target_id = ?)
-#             """,
-#             (user1_id, user2_id, user2_id, user1_id)
-#         ) as cursor:
-#             rows = await cursor.fetchall()
-
-#             # должно быть 2 лайка (в обе стороны)
-#             return len(rows) == 2
-
-
-# 💣 удалить лайк (если понадобится skip/undo)
 async def remove_like(pool, from_user_id: int, to_user_id: int):
     async with pool.acquire() as conn:
         await conn.execute(
@@ -304,95 +245,7 @@ async def remove_like(pool, from_user_id: int, to_user_id: int):
         )
 
 
-# 📊 получить всех, кого лайкнул пользователь
-# async def get_likes_sent(user_id: int):
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute(
-#             """
-#             SELECT target_id FROM likes
-#             WHERE from_user_id = ?
-#             """,
-#             (user_id,)
-#         ) as cursor:
-#             return await cursor.fetchall()
-        
 
-# async def create_match(user1_id: int, user2_id: int):
-#     """
-#     Создаёт мэтч между двумя пользователями
-#     (всегда хранит в порядке min/max чтобы не было дублей)
-#     """
-#     user_a = min(user1_id, user2_id)
-#     user_b = max(user1_id, user2_id)
-
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         await db.execute(
-#             """
-#             INSERT OR IGNORE INTO matches (user1_id, user2_id)
-#             VALUES (?, ?)
-#             """,
-#             (user_a, user_b)
-#         )
-#         await db.commit()
-
-
-# async def is_match(user1_id: int, user2_id: int) -> bool:
-#     """
-#     Проверяет, есть ли взаимный мэтч
-#     """
-#     user_a = min(user1_id, user2_id)
-#     user_b = max(user1_id, user2_id)
-
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute(
-#             """
-#             SELECT 1 FROM matches
-#             WHERE user1_id = ? AND user2_id = ?
-#             """,
-#             (user_a, user_b)
-#         ) as cursor:
-#             return await cursor.fetchone() is not None
-        
-# async def get_matches(user_id: int):
-#     """
-#     Возвращает список всех мэтчей пользователя
-#     """
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         async with db.execute(
-#             """
-#             SELECT user1_id, user2_id
-#             FROM matches
-#             WHERE user1_id = ? OR user2_id = ?
-#             """,
-#             (user_id, user_id)
-#         ) as cursor:
-#             rows = await cursor.fetchall()
-
-#     # превращаем в "второго участника"
-#     matches = []
-#     for user1, user2 in rows:
-#         match_id = user2 if user1 == user_id else user1
-#         matches.append(match_id)
-
-#     return matches
-
-
-# async def remove_match(user1_id: int, user2_id: int):
-#     """
-#     Удаляет мэтч (например, если блокировка/анлайк)
-#     """
-#     user_a = min(user1_id, user2_id)
-#     user_b = max(user1_id, user2_id)
-
-#     async with aiosqlite.connect(DB_NAME) as db:
-#         await db.execute(
-#             """
-#             DELETE FROM matches
-#             WHERE user1_id = ? AND user2_id = ?
-#             """,
-#             (user_a, user_b)
-#         )
-#         await db.commit()
 
 async def check_match(pool, user_id: int, target_id: int):
     async with pool.acquire() as conn:
@@ -465,7 +318,6 @@ async def cleanup_after_match(pool, user_id: int, target_id: int):
                 user_id,
                 target_id,
             )
-            # удаление дизлайков при необходимости (если есть отдельная логика)
 
 async def remove_like(pool, user_id, target_id):
     async with pool.acquire() as conn:

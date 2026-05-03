@@ -82,14 +82,6 @@ def sex_filter_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# def swipe_keyboard():
-#     keyboard = [
-#         [InlineKeyboardButton('+', callback_data='like'),
-#          InlineKeyboardButton('-', callback_data='dislike')],
-#         [InlineKeyboardButton('Отмена', callback_data='cancel')]
-#     ]
-#     return InlineKeyboardMarkup(keyboard)
-
 
 def swipe_keyboard(profile_id: int):
     return InlineKeyboardMarkup([

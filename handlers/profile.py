@@ -7,7 +7,7 @@ from telegram.error import BadRequest
 
 
 async def get_my_profile_info(user, target, edit_flag=False):
-    # user теперь словарь
+
     name = user.get('name', 'Не указано')
     age = user.get('age', 'Не указано')
     sex = user.get('sex', 'Не указано')
@@ -15,7 +15,7 @@ async def get_my_profile_info(user, target, edit_flag=False):
     looking_for = user.get('looking_for', 'Не указано')
     about = user.get('about')
     photo = user.get('photo')
-    # username не используется в тексте, но если нужен — user.get('username')
+
 
     text = (
         f"Вот твои данные\n\n"
@@ -42,7 +42,6 @@ async def get_my_profile_info(user, target, edit_flag=False):
                 reply_markup=keyboard
             )
         except Exception:
-            # fallback, если file_id повреждён
             await target.reply_text(text, reply_markup=keyboard)
     else:
         await target.reply_text(text, reply_markup=keyboard)

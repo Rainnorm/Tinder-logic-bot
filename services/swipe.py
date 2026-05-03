@@ -10,9 +10,7 @@ async def send_profile(pool, update, context, user):
     user_id = update.effective_user.id
     target_id = user["id"]
 
-    # -------------------------
-    # 🔥 фиксируем просмотр (кулдаун / антиповторы)
-    # -------------------------
+
     async with pool.acquire() as conn:
         await conn.execute(
             "INSERT INTO views (user_id, target_id) VALUES ($1, $2)",

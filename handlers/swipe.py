@@ -5,9 +5,7 @@ from states import SWIPE_MODE
 from db import add_like, add_dislike, get_likes_queue, check_match, save_match, get_user, cleanup_after_match, remove_like
 BOT_USERNAME = "kittytestGKh_bot"
 
-# -------------------------
-# 🚀 СТАРТ SWIPE
-# -------------------------
+
 async def start_swipe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     filter_data = context.user_data.get("filter", {})
@@ -25,18 +23,16 @@ async def start_swipe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return SWIPE_MODE
 
 
-# -------------------------
-# ❤️ LIKE
-# -------------------------
+
 def make_link(user):
     if not user:
         return None
 
-    # dict вариант
+
     if isinstance(user, dict):
         username = user.get("username")
 
-    # tuple вариант (на случай старых fetchone)
+
     else:
         try:
             username = user["username"]
@@ -59,10 +55,10 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print("LIKE:", user_id, "->", target_id)
 
-    # 1. сохраняем лайк
+
     await add_like(pool, user_id, target_id)
 
-    # 2. уведомляем пользователя (без падения)
+
     try:
         await context.bot.send_message(
             chat_id=target_id,
@@ -71,7 +67,7 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print("LIKE notify error:", e)
 
-    # 3. проверка матча (ОДИН РАЗ!)
+
     result = await check_match(pool, user_id, target_id)
     print("CHECK MATCH RESULT:", result)
 
@@ -80,18 +76,12 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print("MATCH TRUE")
 
-    # 4. сохраняем матч
+
     await save_match(pool, user_id, target_id)
 
-    # 5. получаем пользователей
-   
-
-    # 9. следующий профиль
     return await start_swipe(update, context)
 
-# -------------------------
-# ❌ SKIP
-# -------------------------
+
 async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -122,7 +112,7 @@ async def start_likes_queue(update, context):
 async def show_next_like(update, context):
     user_id = update.effective_user.id
     pool = context.application.bot_data["pool"]
-    # 🔥 ВСЕГДА свежие данные
+
     queue = await get_likes_queue(pool, user_id)
 
     if not queue:
@@ -169,11 +159,11 @@ async def like_back(update, context):
 
     print("LIKE BACK:", user_id, "->", target_id)
 
-    # ставим лайки с обеих сторон
+
     await add_like(pool, user_id, target_id)
     await add_like(pool, target_id, user_id)
 
-    # 🔥 MATCH
+
     if await check_match(pool, user_id, target_id):
         await save_match(pool, user_id, target_id)
         await cleanup_after_match(pool, user_id, target_id)
@@ -195,7 +185,7 @@ async def like_back(update, context):
                 text=f"💥 МАТЧ с {user['name']}!\n💬 Чат: {link_user or 'нет username'}"
             )
 
-    # ✅ удаляем текущего из очереди
+
     queue = context.user_data.get("likes_queue", [])
     if queue:
         queue.pop(0)
@@ -212,9 +202,7 @@ async def skip_like(update, context):
     current_user = context.user_data.get("current_like_user")
 
     if current_user:
-        await remove_like(pool, current_user, user_id)   # только удаляем лайк
-        # определяем, нужно ли скрывать пользователя в будущем:
-        # await hide_user_for_future(user_id, current_user)  # через отдельную таблицу
+        await remove_like(pool, current_user, user_id)   
 
     queue = context.user_data.get("likes_queue", [])
     if queue:
